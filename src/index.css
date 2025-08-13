@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Trello Clone Dark Theme Design System */
+
+@layer base {
+  :root {
+    /* Dark theme primary colors */
+    --background: 220 17% 9%;
+    --foreground: 220 10% 95%;
+
+    --card: 220 20% 12%;
+    --card-foreground: 220 10% 95%;
+
+    --popover: 220 20% 12%;
+    --popover-foreground: 220 10% 95%;
+
+    /* Brand colors - Purple/Blue gradient theme */
+    --primary: 259 94% 51%;
+    --primary-foreground: 220 10% 95%;
+    --primary-glow: 259 94% 61%;
+
+    --secondary: 220 15% 18%;
+    --secondary-foreground: 220 10% 85%;
+
+    --muted: 220 15% 15%;
+    --muted-foreground: 220 10% 65%;
+
+    --accent: 259 94% 51%;
+    --accent-foreground: 220 10% 95%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 220 10% 95%;
+
+    --border: 220 15% 20%;
+    --input: 220 15% 18%;
+    --ring: 259 94% 51%;
+
+    /* Trello-specific colors */
+    --board-bg: 220 17% 9%;
+    --list-bg: 220 15% 15%;
+    --card-bg: 220 20% 12%;
+    --card-hover: 220 15% 18%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(259 94% 51%), hsl(230 94% 61%));
+    --gradient-card: linear-gradient(145deg, hsl(220 20% 12%), hsl(220 15% 15%));
+    --gradient-board: linear-gradient(180deg, hsl(220 17% 9%), hsl(220 20% 12%));
+
+    /* Shadows */
+    --shadow-card: 0 4px 12px hsl(220 20% 5% / 0.4);
+    --shadow-elevated: 0 8px 24px hsl(220 20% 5% / 0.6);
+    --shadow-glow: 0 0 20px hsl(259 94% 51% / 0.3);
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  /* Default dark mode - always dark for this app */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-board-bg text-foreground font-sans antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--accent));
+  }
+}
+
+@layer utilities {
+  /* Kanban specific utilities */
+  .board-background {
+    background: var(--gradient-board);
+  }
+  
+  .card-shadow {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .card-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+  
+  .glow-effect {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .drag-handle:hover {
+    cursor: grab;
+  }
+
+  .drag-handle:active {
+    cursor: grabbing;
+  }
+}
