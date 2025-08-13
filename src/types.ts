@@ -67,3 +67,31 @@ export type ListUserBoardsResponse = {
       updated_at: Date;
     }>;
 }
+
+export type GetBoardRequest = { uuid: string; }
+export type GetBoardResponse = {
+  board: {
+    id: string;
+    name: string;
+    user_id: string;
+    created_at: Date;
+    updated_at: Date;
+    lists: Array<{
+      id: string;
+      name: string;
+      board_id: string;
+      position: number;
+      created_at: Date;
+      updated_at: Date;
+      cards: Array<{
+        id: string;
+        title: string;
+        description: string;
+        list_id: string;
+        position: number;
+        created_at: Date;
+        updated_at: Date;
+      }>;
+    }>;
+  }
+}

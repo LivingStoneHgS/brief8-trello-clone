@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
-import { CreateBoardRequest, CreateBoardResponse, ListUserBoardsRequest, ListUserBoardsResponse, Board } from '@/types';
+import { CreateBoardRequest, CreateBoardResponse, ListUserBoardsRequest, ListUserBoardsResponse, GetBoardRequest, GetBoardResponse } from '@/types';
 
 export class BoardService {
   static async createBoard(request: CreateBoardRequest): Promise<CreateBoardResponse> {
@@ -39,6 +39,44 @@ export class BoardService {
         created_at: new Date(board.created_at),
         updated_at: new Date(board.updated_at)
       }))
+    };
+
+    return response;
+  }
+
+  static async getBoard(request: GetBoardRequest): Promise<GetBoardResponse> {
+    const { data, error } = await supabase
+      .rpc('get_board', { board_uuid: request.uuid });
+
+    if (error) {
+      throw new Error(`Failed to get board: ${error.message}`);
+    }
+
+    const response: GetBoardResponse = {
+      board: {
+        id: data.board.id,
+        name: data.board.name,
+        user_id: data.board.user_id,
+        created_at: new Date(data.board.created_at),
+        updated_at: new Date(data.board.updated_at),
+        lists: data.board.lists.map((list: any) => ({
+          id: list.id,
+          name: list.name,
+          board_id: list.board_id,
+          position: list.position,
+          created_at: new Date(list.created_at),
+          updated_at: new Date(list.updated_at),
+          cards: list.cards.map((card: any) => ({
+            id: card.id,
+            title: card.title,
+            description: card.description,
+            list_id: card.list_id,
+            position: card.position,
+            created_at: new Date(card.created_at),
+            updated_at: new Date(card.updated_at)
+          }))
+        }))
+      }
     };
 
     return response;
