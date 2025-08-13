@@ -1,12 +1,12 @@
 // Backend-ready data types
-export interface User {
+export type User = {
   id: string;
   email: string;
   name: string;
   created_at: Date;
 }
 
-export interface Board {
+export type Board = {
   id: string;
   name: string;
   user_id: string;
@@ -14,7 +14,7 @@ export interface Board {
   updated_at: Date;
 }
 
-export interface List {
+export type List = {
   id: string;
   name: string;
   board_id: string;
@@ -23,7 +23,7 @@ export interface List {
   updated_at: Date;
 }
 
-export interface Card {
+export type Card = {
   id: string;
   title: string;
   description: string;
@@ -34,13 +34,36 @@ export interface Card {
 }
 
 // UI State types
-export interface AuthState {
+export type AuthState = {
   user: User | null;
   isAuthenticated: boolean;
 }
 
-export interface AppState {
+export type AppState = {
   boards: Board[];
   lists: List[];
   cards: Card[];
+}
+
+// Endpoints Request/Response types
+export type CreateBoardRequest = { name: string; }
+export type CreateBoardResponse = {
+  board: {
+    id: string;
+    name: string;
+    user_id: string;
+    created_at: Date;
+    updated_at: Date;
+  }
+ }
+
+export type ListUserBoardsRequest = {}
+export type ListUserBoardsResponse = {
+  boards: Array<{
+      id: string;
+      name: string;
+      user_id: string;
+      created_at: Date;
+      updated_at: Date;
+    }>;
 }

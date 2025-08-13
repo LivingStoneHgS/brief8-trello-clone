@@ -1,0 +1,35 @@
+-- Create list_user_boards function that uses auth.uid() and returns boards in a "boards" field
+CREATE OR REPLACE FUNCTION public.list_user_boards()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    result jsonb;
+BEGIN
+    SELECT jsonb_build_object(
+        'boards', jsonb_agg(
+            jsonb_build_object(
+                'id', b.id,
+                'name', b.name,
+                'user_id', b.user_id,
+                'created_at', b.created_at,
+                'updated_at', b.updated_at
+            )
+            ORDER BY b.updated_at DESC
+        )
+    ) INTO result
+    FROM public.boards b
+    WHERE b.user_id = auth.uid();
+    
+    -- Return empty boards array if no boards found
+    IF result IS NULL THEN
+        result := '{"boards": []}'::jsonb;
+    END IF;
+    
+    RETURN result;
+END;
+$$;
+
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION public.list_user_boards() TO authenticated;

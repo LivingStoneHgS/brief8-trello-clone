@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
+import { BoardService } from '@/services/BoardService';
+import { Board } from '@/types.ts';
 import { Plus, MoreHorizontal, User, LogOut, Copy, Trash2, Edit3 } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 
 const HomePage = () => {
   const [newBoardName, setNewBoardName] = useState('');
@@ -17,21 +20,57 @@ const HomePage = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { auth, logout } = useAuth();
   const { state, createBoard, updateBoard, deleteBoard, duplicateBoard } = useApp();
+  const [boards, setBoards] = useState<Board[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const userBoards = state.boards.filter(board => board.user_id === auth.user?.id);
+  const userBoards = boards.filter(board => board.user_id === auth.user?.id);
 
-  const handleCreateBoard = () => {
+  useEffect(() => {
+    const loadUserBoards = async () => {
+      if (!auth.user) return;
+      
+      try {
+        setIsLoading(true);
+        const response = await BoardService.listUserBoards({});
+        setBoards(response.boards);
+      } catch (error) {
+        toast({
+          title: "Error loading boards",
+          description: error instanceof Error ? error.message : "Failed to load your boards",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserBoards();
+  }, [auth.user, toast]);
+
+  const handleCreateBoard = async () => {
     if (!newBoardName.trim() || !auth.user) return;
 
-    const board = createBoard(newBoardName.trim(), auth.user.id);
-    setNewBoardName('');
-    setIsCreateDialogOpen(false);
-    toast({
-      title: "Board created!",
-      description: `"${board.name}" has been created successfully.`,
-    });
+    try {
+      const { board } = await BoardService.createBoard({ name: newBoardName.trim() });
+      
+      // Add the new board to local state
+      setBoards(prevBoards => [...prevBoards, board]);
+      
+      setNewBoardName('');
+      setIsCreateDialogOpen(false);
+      toast({
+        title: "Board created!",
+        description: `"${board.name}" has been created successfully.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error creating board",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleRenameBoard = (boardId: string, currentName: string) => {
@@ -162,89 +201,114 @@ const HomePage = () => {
 
         {/* Boards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {userBoards.map((board) => (
-            <Card
-              key={board.id}
-              className="bg-gradient-card border-border card-shadow hover:card-elevated transition-all duration-300 cursor-pointer group"
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  {editingBoard === board.id ? (
-                    <Input
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      onBlur={saveRename}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveRename();
-                        if (e.key === 'Escape') {
-                          setEditingBoard(null);
-                          setEditName('');
-                        }
-                      }}
-                      className="text-lg font-semibold bg-transparent border-primary"
-                      autoFocus
-                    />
-                  ) : (
-                    <CardTitle
-                      className="text-lg font-semibold text-card-foreground group-hover:text-primary transition-colors cursor-pointer"
+          {isLoading ? (
+            // Loading skeletons
+            <>
+              {[...Array(4)].map((_, index) => (
+                <Card key={index} className="bg-gradient-card border-border">
+                  <CardHeader className="pb-3">
+                    <div className="h-6 bg-muted rounded animate-pulse w-3/4"></div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="h-4 bg-muted rounded animate-pulse w-1/2 mb-4"></div>
+                    <div className="h-10 bg-muted rounded animate-pulse w-full"></div>
+                  </CardContent>
+                </Card>
+              ))}
+              <Card className="bg-secondary/50 border-dashed border-2 border-border">
+                <CardContent className="flex flex-col items-center justify-center h-full py-12">
+                  <div className="h-12 w-12 bg-muted rounded-full animate-pulse mb-4"></div>
+                  <div className="h-4 bg-muted rounded animate-pulse w-32"></div>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <>
+              {userBoards.map((board) => (
+                <Card
+                  key={board.id}
+                  className="bg-gradient-card border-border card-shadow hover:card-elevated transition-all duration-300 cursor-pointer group"
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      {editingBoard === board.id ? (
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onBlur={saveRename}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveRename();
+                            if (e.key === 'Escape') {
+                              setEditingBoard(null);
+                              setEditName('');
+                            }
+                          }}
+                          className="text-lg font-semibold bg-transparent border-primary"
+                          autoFocus
+                        />
+                      ) : (
+                        <CardTitle
+                          className="text-lg font-semibold text-card-foreground group-hover:text-primary transition-colors cursor-pointer"
+                          onClick={() => navigate(`/board/${board.id}`)}
+                        >
+                          {board.name}
+                        </CardTitle>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleRenameBoard(board.id, board.name)}>
+                            <Edit3 className="h-4 w-4 mr-2" />
+                            Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDuplicateBoard(board.id, board.name)}>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteBoard(board.id, board.name)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <CardDescription className="text-muted-foreground text-sm">
+                      Created {board.created_at.toLocaleDateString()}
+                    </CardDescription>
+                    <Button
+                      variant="ghost"
+                      className="w-full mt-4 justify-start text-card-foreground hover:text-primary"
                       onClick={() => navigate(`/board/${board.id}`)}
                     >
-                      {board.name}
-                    </CardTitle>
-                  )}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleRenameBoard(board.id, board.name)}>
-                        <Edit3 className="h-4 w-4 mr-2" />
-                        Rename
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDuplicateBoard(board.id, board.name)}>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Duplicate
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleDeleteBoard(board.id, board.name)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <CardDescription className="text-muted-foreground text-sm">
-                  Created {board.created_at.toLocaleDateString()}
-                </CardDescription>
-                <Button
-                  variant="ghost"
-                  className="w-full mt-4 justify-start text-card-foreground hover:text-primary"
-                  onClick={() => navigate(`/board/${board.id}`)}
-                >
-                  Open Board →
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                      Open Board →
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
 
-          {/* Create Board Card */}
-          <Card
-            className="bg-secondary/50 border-dashed border-2 border-border hover:border-primary transition-colors cursor-pointer group"
-            onClick={() => setIsCreateDialogOpen(true)}
-          >
-            <CardContent className="flex flex-col items-center justify-center h-full py-12">
-              <Plus className="h-12 w-12 text-muted-foreground group-hover:text-primary transition-colors mb-4" />
-              <p className="text-muted-foreground group-hover:text-primary transition-colors font-medium">
-                Create new board
-              </p>
-            </CardContent>
-          </Card>
+              {/* Create Board Card */}
+              <Card
+                className="bg-secondary/50 border-dashed border-2 border-border hover:border-primary transition-colors cursor-pointer group"
+                onClick={() => setIsCreateDialogOpen(true)}
+              >
+                <CardContent className="flex flex-col items-center justify-center h-full py-12">
+                  <Plus className="h-12 w-12 text-muted-foreground group-hover:text-primary transition-colors mb-4" />
+                  <p className="text-muted-foreground group-hover:text-primary transition-colors font-medium">
+                    Create new board
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
       </main>
     </div>
