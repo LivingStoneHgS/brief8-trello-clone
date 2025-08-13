@@ -8,24 +8,22 @@ DECLARE
     result jsonb;
 BEGIN
     SELECT jsonb_build_object(
-        'boards', jsonb_agg(
-            jsonb_build_object(
-                'id', b.id,
-                'name', b.name,
-                'user_id', b.user_id,
-                'created_at', b.created_at,
-                'updated_at', b.updated_at
-            )
-            ORDER BY b.updated_at DESC
+        'boards', COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', b.id,
+                    'name', b.name,
+                    'user_id', b.user_id,
+                    'created_at', b.created_at,
+                    'updated_at', b.updated_at
+                )
+                ORDER BY b.updated_at DESC
+            ),
+            '[]'::jsonb
         )
     ) INTO result
     FROM public.boards b
     WHERE b.user_id = auth.uid();
-    
-    -- Return empty boards array if no boards found
-    IF result IS NULL THEN
-        result := '{"boards": []}'::jsonb;
-    END IF;
     
     RETURN result;
 END;

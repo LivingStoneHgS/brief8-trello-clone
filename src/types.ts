@@ -95,3 +95,22 @@ export type GetBoardResponse = {
     }>;
   }
 }
+
+export type CreateCardRequest = {
+  title: string;
+  description?: string;
+  list_id: string;
+  position: number;
+}
+
+export type CreateCardResponse = {
+  card: {
+    id: string;
+    title: string;
+    description: string;
+    list_id: string;
+    position: number;
+    created_at: Date;
+    updated_at: Date;
+  }
+}

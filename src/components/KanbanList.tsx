@@ -12,10 +12,11 @@ import { KanbanCard } from './KanbanCard';
 interface KanbanListProps {
   list: List;
   cards: Card[];
+  onCardCreate: (title: string, listId: string) => void;
   dragHandleProps?: DraggableProvidedDragHandleProps | null;
 }
 
-export const KanbanList = ({ list, cards, dragHandleProps }: KanbanListProps) => {
+export const KanbanList = ({ list, cards, onCardCreate, dragHandleProps }: KanbanListProps) => {
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState('');
   const [isEditingList, setIsEditingList] = useState(false);
@@ -26,7 +27,7 @@ export const KanbanList = ({ list, cards, dragHandleProps }: KanbanListProps) =>
   const handleCreateCard = () => {
     if (!newCardTitle.trim()) return;
 
-    createCard(newCardTitle.trim(), list.id);
+    onCardCreate(newCardTitle.trim(), list.id);
     setNewCardTitle('');
     setIsAddingCard(false);
     toast({

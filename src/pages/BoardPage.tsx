@@ -93,6 +93,55 @@ const BoardPage = () => {
     return list ? list.cards.sort((a, b) => a.position - b.position) : [];
   };
 
+  const handleCreateCard = async (title: string, listId: string) => {
+    try {
+      const listCards = getListCards(listId);
+      const maxPosition = Math.max(...listCards.map(c => c.position), -1);
+      
+      const response = await BoardService.createCard({
+        title,
+        description: '',
+        list_id: listId,
+        position: maxPosition + 1
+      });
+
+      // Update the board data with the new card
+      setBoardData(prevData => {
+        if (!prevData) return null;
+        
+        const newCard = response.card;
+        const updatedLists = prevData.board.lists.map(list => {
+          if (list.id === listId) {
+            return {
+              ...list,
+              cards: [...list.cards, newCard].sort((a, b) => a.position - b.position)
+            };
+          }
+          return list;
+        });
+
+        return {
+          ...prevData,
+          board: {
+            ...prevData.board,
+            lists: updatedLists
+          }
+        };
+      });
+
+      toast({
+        title: "Card created",
+        description: `"${title}" has been added to the list.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to create card",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-board">
@@ -172,6 +221,7 @@ const BoardPage = () => {
                         <KanbanList
                           list={list}
                           cards={getListCards(list.id)}
+                          onCardCreate={handleCreateCard}
                           dragHandleProps={provided.dragHandleProps}
                         />
                       </div>

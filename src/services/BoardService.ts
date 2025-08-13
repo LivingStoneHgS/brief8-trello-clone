@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
-import { CreateBoardRequest, CreateBoardResponse, ListUserBoardsRequest, ListUserBoardsResponse, GetBoardRequest, GetBoardResponse } from '@/types';
+import { CreateBoardRequest, CreateBoardResponse, ListUserBoardsRequest, ListUserBoardsResponse, GetBoardRequest, GetBoardResponse, CreateCardRequest, CreateCardResponse } from '@/types';
 
 export class BoardService {
   static async createBoard(request: CreateBoardRequest): Promise<CreateBoardResponse> {
@@ -76,6 +76,34 @@ export class BoardService {
             updated_at: new Date(card.updated_at)
           }))
         }))
+      }
+    };
+
+    return response;
+  }
+
+  static async createCard(request: CreateCardRequest): Promise<CreateCardResponse> {
+    const { data, error } = await supabase
+      .rpc('create_card', {
+        p_title: request.title,
+        p_description: request.description || '',
+        p_list_id: request.list_id,
+        p_position: request.position
+      });
+
+    if (error) {
+      throw new Error(`Failed to create card: ${error.message}`);
+    }
+
+    const response: CreateCardResponse = {
+      card: {
+        id: data.card.id,
+        title: data.card.title,
+        description: data.card.description,
+        list_id: data.card.list_id,
+        position: data.card.position,
+        created_at: new Date(data.card.created_at),
+        updated_at: new Date(data.card.updated_at)
       }
     };
 
