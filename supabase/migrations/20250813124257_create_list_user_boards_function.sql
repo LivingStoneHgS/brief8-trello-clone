@@ -2,7 +2,7 @@
 CREATE OR REPLACE FUNCTION public.list_user_boards()
 RETURNS jsonb
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 AS $$
 DECLARE
     result jsonb;

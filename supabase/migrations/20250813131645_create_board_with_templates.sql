@@ -2,7 +2,7 @@
 CREATE OR REPLACE FUNCTION public.create_board(board_name TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 AS $$
 DECLARE
     new_board public.boards%ROWTYPE;
