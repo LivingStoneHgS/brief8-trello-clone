@@ -11,7 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 import { BoardService } from '@/services/BoardService';
 import { Board } from '@/types.ts';
 import { Plus, MoreHorizontal, User, LogOut, Copy, Trash2, Edit3 } from 'lucide-react';
-import { v4 as uuidv4 } from 'uuid';
 
 const HomePage = () => {
   const [newBoardName, setNewBoardName] = useState('');
@@ -19,7 +18,7 @@ const HomePage = () => {
   const [editName, setEditName] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { auth, logout } = useAuth();
-  const { state, createBoard, updateBoard, deleteBoard, duplicateBoard } = useApp();
+  const { updateBoard, deleteBoard, duplicateBoard } = useApp();
   const [boards, setBoards] = useState<Board[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -90,22 +89,39 @@ const HomePage = () => {
     });
   };
 
-  const handleDeleteBoard = (boardId: string, boardName: string) => {
-    deleteBoard(boardId);
-    toast({
-      title: "Board deleted",
-      description: `"${boardName}" has been deleted.`,
-    });
+  const handleDeleteBoard = async (boardId: string, boardName: string) => {
+    try {
+      await BoardService.deleteBoard(boardId);
+      setBoards(prevBoards => prevBoards.filter(b => b.id !== boardId));
+      toast({
+        title: "Board deleted",
+        description: `"${boardName}" has been deleted.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error deleting board",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDuplicateBoard = (boardId: string, boardName: string) => {
+  const handleDuplicateBoard = async (boardId: string) => {
     if (!auth.user) return;
-    
-    const newBoard = duplicateBoard(boardId, auth.user.id);
-    toast({
-      title: "Board duplicated",
-      description: `"${newBoard.name}" has been created as a copy.`,
-    });
+    try {
+      const newBoard = await duplicateBoard(boardId, auth.user.id);
+      setBoards(prevBoards => [...prevBoards, newBoard]);
+      toast({
+        title: "Board duplicated",
+        description: `"${newBoard.name}" has been created as a copy.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error duplicating board",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleLogout = () => {
@@ -265,7 +281,7 @@ const HomePage = () => {
                             <Edit3 className="h-4 w-4 mr-2" />
                             Rename
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDuplicateBoard(board.id, board.name)}>
+                          <DropdownMenuItem onClick={() => handleDuplicateBoard(board.id)}>
                             <Copy className="h-4 w-4 mr-2" />
                             Duplicate
                           </DropdownMenuItem>

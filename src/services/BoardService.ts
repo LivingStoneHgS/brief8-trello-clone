@@ -109,4 +109,36 @@ export class BoardService {
 
     return response;
   }
+
+  static async duplicateBoard(originalBoardId: string, userId: string) {
+    const { data, error } = await supabase.rpc('duplicate_board', {
+      original_board_uuid: originalBoardId,
+      new_user_id: userId
+    });
+    if (error) {
+      throw new Error(`Failed to duplicate board: ${error.message}`);
+    }
+    // Fetch the new board's data (id returned by function)
+    const newBoardId = data;
+    // Optionally, fetch the full board data (if needed for UI)
+    const { data: boardData, error: boardError } = await supabase
+      .rpc('get_board', { board_uuid: newBoardId });
+    if (boardError) {
+      throw new Error(`Failed to fetch duplicated board: ${boardError.message}`);
+    }
+    return {
+      id: boardData.board.id,
+      name: boardData.board.name,
+      user_id: boardData.board.user_id,
+      created_at: new Date(boardData.board.created_at),
+      updated_at: new Date(boardData.board.updated_at)
+    };
+  }
+
+  static async deleteBoard(boardId: string): Promise<void> {
+    const { error } = await supabase.rpc('delete_board', { board_uuid: boardId });
+    if (error) {
+      throw new Error(`Failed to delete board: ${error.message}`);
+    }
+  }
 }

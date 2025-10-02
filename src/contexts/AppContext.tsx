@@ -1,13 +1,14 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { Board, List, Card, AppState } from '@/types.ts';
 import { v4 as uuidv4 } from 'uuid';
+import { BoardService } from '@/services/BoardService';
 
 interface AppContextType {
   state: AppState;
   createBoard: (name: string, userId: string) => Board;
   updateBoard: (boardId: string, updates: Partial<Board>) => void;
   deleteBoard: (boardId: string) => void;
-  duplicateBoard: (boardId: string, userId: string) => Board;
+  duplicateBoard: (boardId: string, userId: string) => Promise<Board>;
   createList: (name: string, boardId: string) => List;
   updateList: (listId: string, updates: Partial<List>) => void;
   deleteList: (listId: string) => void;
@@ -99,57 +100,12 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     }));
   };
 
-  const duplicateBoard = (boardId: string, userId: string): Board => {
-    const originalBoard = state.boards.find(b => b.id === boardId);
-    if (!originalBoard) throw new Error('Board not found');
-
-    const newBoard: Board = {
-      ...originalBoard,
-      id: uuidv4(),
-      name: `${originalBoard.name} (Copy)`,
-      user_id: userId,
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
-
+  const duplicateBoard = async (boardId: string, userId: string): Promise<Board> => {
+    const newBoard = await BoardService.duplicateBoard(boardId, userId);
     setState(prev => ({
       ...prev,
       boards: [...prev.boards, newBoard],
     }));
-
-    // Duplicate lists and cards
-    const boardLists = state.lists.filter(l => l.board_id === boardId);
-    boardLists.forEach(list => {
-      const newList: List = {
-        ...list,
-        id: uuidv4(),
-        board_id: newBoard.id,
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
-
-      setState(prev => ({
-        ...prev,
-        lists: [...prev.lists, newList],
-      }));
-
-      const listCards = state.cards.filter(c => c.list_id === list.id);
-      listCards.forEach(card => {
-        const newCard: Card = {
-          ...card,
-          id: uuidv4(),
-          list_id: newList.id,
-          created_at: new Date(),
-          updated_at: new Date(),
-        };
-
-        setState(prev => ({
-          ...prev,
-          cards: [...prev.cards, newCard],
-        }));
-      });
-    });
-
     return newBoard;
   };
 
